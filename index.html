@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Memory Game</title>
+</head>
+<body onload="playGame()">    
+    <div id='titleArea'></div>
+    <hr>
+    <div id='gameArea'></div>
+    <div id='buttonArea'></div>
+
+    <script>
+        //constants
+        const SIZE = 52;
+        const PAIR = 2;
+        const SUITS = new Array('Spade', 'Heart', 'Diamond', 'Club');
+        const CHA = new Array("Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King");
+
+
+        // Define array and initial
+        var index = 0;
+        var cards = [];
+        var pairedCards = [];
+        var guessCards = [];
+        var mutex = 0;
+        var interval;
+        var count = 0;
+
+
+        for(index = 0; index < 52; index++ ){
+            cards[index] = index;
+        }
+
+        // Create playGame() function
+        function playGame(){
+            shuffleCards(cards);
+            // flipCard();
+            setGame();
+            resetTimer(60);
+        }
+
+        // Create countDown timer from 60 to 0
+        function resetTimer(limit){
+            count = limit;
+            interval = setInterval(function(){                               
+                if(count == 0){
+                    stopGame();                    
+                }
+                document.getElementById('leftTime').innerHTML = count;
+                count--;     
+            }, 1000);
+        }
+
+        // Create setGame() function
+        function setGame(){                        
+            
+            // Create title and add timer event
+            var title = document.createElement("h1");
+            title.style.textAlign = "center";
+            title.innerHTML = "Memory Game (Time left:" + "<span id ='leftTime'></span>" + " seconds)";
+            document.getElementById("titleArea").appendChild(title);            
+            
+            // Define variables
+            var tr = [];
+            var td = [];        
+            var img;
+            const ROW = 4;
+            const COL = 13;
+            var i, j, k = 0;
+                    
+            // Create table element and style border
+            var table = document.createElement("table");        
+            table.style.border = "1px solid black";            
+
+            for (i = 0; i <  ROW; i++){
+                tr[i] = document.createElement("tr");
+                table.appendChild(tr[i]);
+                for(j = 0; j <  COL; j++){        
+
+                    // Create image elements and set the default back.gif
+                    img = document.createElement("img");
+                    img.setAttribute("src", "images/back.gif");
+                    img.setAttribute("height", "140");
+                    img.setAttribute("width", "115");
+                    img.setAttribute("id", j + i * 13);
+
+                    // Image click event go to selectCard() with ID
+                    img.onclick = function(){
+                        selectCard(this.id);
+                    }                    
+                    
+                    // Create td elements and append image element 
+                    td[j] = document.createElement("td");
+                    td[j].style.border = "1px solid black";
+                    td[j].appendChild(img);
+                    tr[i].appendChild(td[j]);
+                }
+            }
+
+            //  Create <br> element
+            var br = document.createElement("br");
+
+            // Append table on gameArea
+            document.getElementById("gameArea").appendChild(table);
+            document.getElementById("gameArea").setAttribute("align", "center");
+            document.getElementById("gameArea").appendChild(br);            
+                                    
+            // Create Stop Game, Flip Cards, Show cards buttons and event handlers
+
+            var stop = document.createElement("button");
+            stop.innerHTML = "Stop Game";
+            stop.style.margin = "2px";
+            document.getElementById("buttonArea").appendChild(stop);
+            document.getElementById("buttonArea").setAttribute("align", "center");
+
+            stop.onclick = function(){
+                stopGame();
+            }
+
+            var flip = document.createElement("button");
+            flip.innerHTML = "Flip Cards";
+            flip.style.margin = "2px";
+            document.getElementById("buttonArea").appendChild(flip);
+            document.getElementById("buttonArea").setAttribute("align", "center");
+
+            flip.onclick = function(){
+                flipCard();
+            }
+
+            var show = document.createElement("button");
+            show.innerHTML = "Show Cards";
+            show.style.margin = "2px";
+            document.getElementById("buttonArea").appendChild(show);
+            document.getElementById("buttonArea").setAttribute("align", "center");
+
+            show.onclick = function(){
+                showCard();
+            }            
+        }
+
+        // Create showCard() function
+        function showCard(){
+            var pos = 0;
+            var face_up = setInterval(function(){                
+                if(pos > 50){
+                    clearInterval(face_up);
+                }
+                document.getElementById(pos).src = "images/" + cards[pos] + ".png";
+                pos ++;                
+            }, 50);
+        }
+
+        // Create flipCard() function
+        function flipCard(){
+            var pos = 0;
+            var face_down = setInterval(function(){
+                if(pos > SIZE-2){
+                    clearInterval(face_down);
+                }
+
+                if(!isPairedCard(pos))
+                    document.getElementById(pos).src = "images/back.gif";                                
+                pos++;                               
+            }, 50);
+        }
+
+        // Create isPairedCard() function
+        function isPairedCard(id){                                   
+            if(pairedCards.indexOf(id.toString()) >= 0)
+                return true;
+            else    
+                return false;
+        }
+
+        // Create sortCards() function
+        function sortCards(){
+            var m = 0;
+            var even = [], pos = [];
+            var odd;
+            for(m = 0; m < pairedCards.length; m += 2){
+                // pos[m/2] = pairedCards[m];
+                even[m/2] =parseInt(cards[pairedCards[m]]);                                
+            }
+            
+            bubbleSort(even);
+
+            for(p = 0; p < even.length; p++){
+                pos[p] = cards.indexOf(even[p]);
+            }                        
+            
+            var message = "You have found " + (pairedCards.length/2) + " pairs.\n";
+                message += "\n";
+            for(l = 0; l < pos.length; l++){
+                odd = pairedCards.indexOf(pos[l].toString()) + 1;                
+                message += SUITS[Math.floor(even[l]/13)] + "-" + CHA[even[l] % 13] + " -- " ;
+                message += SUITS[Math.floor(cards[pairedCards[odd]]/13) ] + "-"+ CHA[cards[pairedCards[odd]] % 13] + "\n"; 
+            }
+            alert(message);
+        }
+
+        // Bubble sort function
+        function bubbleSort(arr) {
+            var swapped;
+            do {
+                swapped = false;
+                for (var i=0; i < arr.length; i++) {
+                    if (arr[i] > arr[i+1]) {
+                        var temp = arr[i];
+                        arr[i] = arr[i+1];
+                        arr[i+1] = temp;
+                        swapped = true;
+                    }
+                }
+            } while (swapped);            
+        }
+       
+        // Create stopGame() function
+        function stopGame(){
+            clearInterval(interval);            
+            sortCards();
+            document.getElementById("titleArea").innerHTML = '';
+            document.getElementById("gameArea").innerHTML = '';
+            document.getElementById("buttonArea").innerHTML = '';
+            // Initial array
+            index = 0;
+            cards = [];
+            pairedCards = [];
+            guessCards = [];
+            mutex = 0;
+            interval;
+            count = 0;
+            for(index = 0; index < 52; index++ ){
+                cards[index] = index;
+            }
+            playGame();
+        }        
+
+        // Create shuffleCards() function
+        function shuffleCards(array){
+            var currentIndex = array.length, temporaryValue, randomIndex;
+
+            // While there remain elements to shuffle...
+            while (0 !== currentIndex) {
+
+                // Pick a remaining element...
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex -= 1;
+
+                // And swap it with the current element.
+                temporaryValue = array[currentIndex];
+                array[currentIndex] = array[randomIndex];
+                array[randomIndex] = temporaryValue;
+            }
+            return array;
+        }
+
+        // Create selectCard() function
+        function selectCard(id){
+            if(!isPairedCard(id)){
+                document.getElementById(id).src = "images/" + cards[id] + ".png";
+                guessCards.push(id);
+                if(guessCards.length == PAIR){
+                    var first = guessCards[0];
+                    var second = guessCards[1];
+                    if((cards[first] % 13 == cards[second] % 13) && (cards[first] != cards[second])){
+                        pairedCards.push(first);
+                        pairedCards.push(second);
+                    }else{
+                        mutex = 1;
+                        setTimeout(function(){                        
+                            document.getElementById(first).src = "images/back.gif";
+                            document.getElementById(second).src = "images/back.gif";                        
+                            mutex = 0;
+                        }, 1000);                    
+                    }
+                    guessCards.pop();
+                    guessCards.pop();
+                }
+            }            
+        }
+    </script>
+</body>
+</html>
